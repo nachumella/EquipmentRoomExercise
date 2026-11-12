@@ -1,10 +1,17 @@
 okusing System;
 
-// <summary>
-//Todo: צרו מחלקת חריגים המטפלת במקרים בהם אין מספיק מחשבים זמינים להשאלה.
-//שם המחלקה צריך להיות EquipmentUnavailableException.
 
+class EquipmentUnavailableException : Exception
+{
+    public int RequestedAmount { get; }
+    public int AvailableAmount { get; }
 
+    public EquipmentUnavailableException(string message, int amount, int availableComputers) : base(message)
+    {
+        RequestedAmount = amount;
+        AvailableAmount = amount - availableComputers;
+    }
+}
 
 class EquipmentRoom
 {
@@ -18,8 +25,11 @@ class EquipmentRoom
         }
         set
         {
-            // TODO: יש לבדוק שמספר המחשבים אינו שלילי.
-            // אם כן, יש לזרוק חריגה מתאימה.
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException("Available computers cant be negative");
+            }
+
             availableComputers = value;
         }
     }
@@ -31,14 +41,16 @@ class EquipmentRoom
 
     public void Borrow(int amount)
     {
-       
-            // TODO: יש לזרוק חריגה מתאימה כאשר אין מספיק מחשבים זמינים.
-        
-
-
+        if (amount > AvailableComputers)
+        {
+            throw new EquipmentUnavailableException(
+                "Not enough computers available",
+                amount,
+                AvailableComputers);
+        }
 
         AvailableComputers -= amount;
-        Console.WriteLine($"הושאלו {amount} מחשבים בהצלחה.");
+        Console.WriteLine($"{amount} computers were borrowed successfully.");
     }
 }
 
@@ -50,19 +62,41 @@ class Program
 
         EquipmentRoom room = new EquipmentRoom(initialComputers);
 
-        // יצירת חדר מחשבים עם מספר מחשבים שלילי:
-        // לאחר מימוש הבדיקה ב-set, יש לוודא שמצב כזה מטופל כראוי.
-        // TODO: יש להוסיף try-catch מתאימים סביב הקריאות שעלולות לזרוק חריגה.
-       // int negativeComputers = -5;
-       // EquipmentRoom invalidRoom = new EquipmentRoom(negativeComputers);
+        try
+        {
+            int negativeComputers = -5;
+            EquipmentRoom invalidRoom = new EquipmentRoom(negativeComputers);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
 
+        try
+        {
+            room.Borrow(4);
+        }
+        catch (EquipmentUnavailableException ex)
+        {
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("Requested: " + ex.RequestedAmount);
+            Console.WriteLine("Missing: " + ex.AvailableAmount);
+        }
 
-        room.Borrow(4);
-        Console.WriteLine("ממשיכים בתוכנית...");
-        
+        Console.WriteLine("ממשיכים בתוכנית ...");
+
+        try
+        {
             room.Borrow(8);
-        
+        }
+        catch (EquipmentUnavailableException ex)
+        {
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("Requested: " + ex.RequestedAmount);
+            Console.WriteLine("Missing: " + ex.AvailableAmount);
+        }
 
-        Console.WriteLine("מספר המחשבים הזמינים: " + room.AvailableComputers);
+        Console.WriteLine("מספר המחשבים הזמינים : " + room.AvailableComputers);
     }
 }
+
